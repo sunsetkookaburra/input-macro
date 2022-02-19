@@ -10,7 +10,7 @@ Simple no-nonsense `input!(...)` macro for Rust.
 + [📦 Crate Page](https://crates.io/crates/input-macro)
 + [📚 Documentation](https://docs.rs/input-macro)
 + [💻 Repository](https://github.com/sunsetkookaburra/input-macro)
-+ [💻 License](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
++ [⚖️ License](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
 
 ## Example
 
