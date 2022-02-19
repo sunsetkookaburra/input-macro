@@ -96,8 +96,8 @@ pub fn _confirm(fmt: Arguments) -> io::Result<bool> {
 }
 
 /// Attempts to display the formatted prompt to the standard output
-/// then read the next line (CR or CRLF) from the standard input,
-/// returning a [`io::Result<String>`] (see [`input!`] for more).
+/// then read the next line (CR or CRLF) from the standard input.
+/// Returns [`io::Result<String>`] (see [`input!`] for more).
 ///
 /// # Examples
 /// ```no_run
@@ -110,8 +110,9 @@ macro_rules! try_input {
 }
 
 /// Attempts to display the formatted prompt to the standard output
-/// then read the next line (CR or CRLF) from the standard input,
-/// returning an [`io::Result<bool>`] (see [`confirm!`] for more).
+/// then reads lines (CR or CRLF) from the standard input,
+/// until either a 'yes' or a 'no' answer is recorded.
+/// Returns [`io::Result<bool>`] (see [`confirm!`] for more).
 ///
 /// # Example
 ///
@@ -150,8 +151,8 @@ macro_rules! input {
 
 /// Displays the formatted prompt to the standard output
 /// then reads lines (CR or CRLF) from the standard input,
-/// until either a 'yes' or a 'no' answer is recorded,
-/// returning a [`bool`].
+/// until either a 'yes' or a 'no' answer is recorded.
+/// Returns [`bool`].
 ///
 /// # Panics
 ///
