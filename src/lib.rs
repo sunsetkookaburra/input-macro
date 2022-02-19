@@ -10,7 +10,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```no_run
 //! use input_macro::{confirm, input};
 //!
 //! fn main() {
@@ -40,11 +40,126 @@ use std::fmt::Arguments;
 use std::io::{self, stdin, stdout, Write};
 
 /// Reads the next available line (without CR/CRLF) from the standard input.
+///
+/// # Example
+/// ```no_run
+/// # use input_macro::next_line;
+/// // echo "helloworld" | my_program
+/// assert_eq!(next_line().unwrap(), "helloworld");
+/// ```
 pub fn next_line() -> io::Result<String> {
     let mut line = String::new();
     stdin().read_line(&mut line).unwrap();
     line.truncate(line.trim_end_matches(['\r', '\n']).len());
     Ok(line)
+}
+
+/// Return whether `s` is a 'yes', 'no', or 'other' answer.
+///
+/// # Example
+/// ```
+/// # use input_macro::answer;
+/// assert_eq!(answer("yes"), Some(true));
+/// assert_eq!(answer("no"), Some(false));
+/// assert_eq!(answer("beans"), None);
+/// ```
+pub fn answer(s: &str) -> Option<bool> {
+    _answer(s.to_ascii_lowercase().as_str())
+}
+
+/// Attempts to display the formatted prompt to the standard output
+/// then read the next line (CR or CRLF) from the standard input.
+/// Returns [`io::Result<String>`] (see [`input!`] for more).
+///
+/// # Examples
+/// ```no_run
+/// # use input_macro::try_input;
+/// println!("Hello, {}!", try_input!("What's your name? ").unwrap());
+/// ```
+#[macro_export]
+macro_rules! try_input {
+    () => ($crate::next_line());
+    ($($arg:tt)*) => ($crate::_input(format_args!($($arg)*)));
+}
+
+/// Displays the formatted prompt to the standard output
+/// then reads the next line (CR or CRLF) from the standard input,
+/// and returns it as a [`String`].
+///
+/// # Panics
+///
+/// Panics if writing to `std::io::stdout()` fails,
+/// or reading from `std::io::stdin()` fails.
+///
+/// # Examples
+/// ```no_run
+/// # use input_macro::input;
+/// let name: String = input!("What's your name? ");
+/// let age: i64 = input!("How old are you today {name}? ").parse().unwrap();
+/// println!(
+///     "In hexadecimal, thats {}{:x}!",
+///     if age < 0 { "-" } else { "" }, age.abs(),
+/// );
+/// ```
+#[macro_export]
+macro_rules! input {
+    () => ($crate::try_input!().unwrap());
+    ($($arg:tt)*) => ($crate::try_input!($($arg)*).unwrap());
+}
+
+/// Attempts to display the formatted prompt to the standard output
+/// then reads lines (CR or CRLF) from the standard input,
+/// until either a 'yes' or a 'no' answer is recorded.
+/// Returns [`io::Result<bool>`] (see [`confirm!`] for more).
+///
+/// # Example
+///
+/// ```no_run
+/// # use input_macro::try_confirm;
+/// let answer: bool = try_confirm!("Do you like chocolate 🍫 (yes/no)? ").unwrap();
+/// ```
+#[macro_export]
+macro_rules! try_confirm {
+    () => ($crate::_confirm(format_args!("(yes/no) ")));
+    ($($arg:tt)*) => ($crate::_confirm(format_args!($($arg)*)));
+}
+
+/// Displays the formatted prompt to the standard output
+/// then reads lines (CR or CRLF) from the standard input,
+/// until either a 'yes' or a 'no' answer is recorded.
+/// Returns [`bool`].
+///
+/// # Panics
+///
+/// Panics if writing to `std::io::stdout()` fails,
+/// or reading from `std::io::stdin()` fails.
+///
+/// # Example
+///
+/// ```no_run
+/// # use input_macro::confirm;
+/// // ... Do you like chocolate 🍫 (yes/no)? hello
+/// // ... Do you like chocolate 🍫 (yes/no)? yes
+/// // ... Yay! I like chocolate too 🙂.
+///
+/// if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
+///     println!("Yay! I like chocolate too 🙂.");
+/// }
+/// else {
+///     println!("Oh well, all the more for me 😋!");
+/// }
+/// ```
+#[macro_export]
+macro_rules! confirm {
+    () => ($crate::try_confirm!().unwrap());
+    ($($arg:tt)*) => ($crate::try_confirm!($($arg)*).unwrap());
+}
+
+#[doc(hidden)]
+pub fn _input(fmt: Arguments) -> io::Result<String> {
+    stdout().write_fmt(fmt)?;
+    stdout().flush()?;
+    next_line()
 }
 
 fn _answer(s: &str) -> Option<bool> {
@@ -65,18 +180,6 @@ fn _answer(s: &str) -> Option<bool> {
     }
 }
 
-/// Return whether `s` is a 'yes', 'no', or 'other' answer.
-pub fn answer(s: &str) -> Option<bool> {
-    _answer(s.to_ascii_lowercase().as_str())
-}
-
-#[doc(hidden)]
-pub fn _input(fmt: Arguments) -> io::Result<String> {
-    stdout().write_fmt(fmt)?;
-    stdout().flush()?;
-    next_line()
-}
-
 fn _confirm_once(fmt: Arguments) -> io::Result<Option<bool>> {
     Ok({
         let mut line = _input(fmt)?;
@@ -95,87 +198,13 @@ pub fn _confirm(fmt: Arguments) -> io::Result<bool> {
     })
 }
 
-/// Attempts to display the formatted prompt to the standard output
-/// then read the next line (CR or CRLF) from the standard input.
-/// Returns [`io::Result<String>`] (see [`input!`] for more).
-///
-/// # Examples
-/// ```no_run
-/// println!("Hello, {}!", try_input!("What's your name? ").unwrap());
-/// ```
-#[macro_export]
-macro_rules! try_input {
-    () => ($crate::next_line());
-    ($($arg:tt)*) => ($crate::_input(format_args!($($arg)*)));
-}
-
-/// Attempts to display the formatted prompt to the standard output
-/// then reads lines (CR or CRLF) from the standard input,
-/// until either a 'yes' or a 'no' answer is recorded.
-/// Returns [`io::Result<bool>`] (see [`confirm!`] for more).
-///
-/// # Example
-///
-/// ```
-/// let answer: bool = try_confirm!("Do you like chocolate 🍫 (yes/no)? ").unwrap();
-/// ```
-#[macro_export]
-macro_rules! try_confirm {
-    () => ($crate::_confirm(format!("(yes/no) ")));
-    ($($arg:tt)*) => ($crate::_confirm(format_args!($($arg)*)));
-}
-
-/// Displays the formatted prompt to the standard output
-/// then reads the next line (CR or CRLF) from the standard input,
-/// and returns it as a [`String`].
-///
-/// # Panics
-///
-/// Panics if writing to `std::io::stdout()` fails,
-/// or reading from `std::io::stdin()` fails.
-///
-/// # Examples
-/// ```no_run
-/// let name: String = input!("What's your name? ");
-/// let age: i64 = input!("How old are you today {name}? ").parse().unwrap();
-/// println!(
-///     "In hexadecimal, thats {}{:x}!",
-///     if age < 0 { "-" } else { "" }, age.abs(),
-/// );
-/// ```
-#[macro_export]
-macro_rules! input {
-    () => ($crate::try_input!().unwrap());
-    ($($arg:tt)*) => ($crate::try_input!($($arg)*).unwrap());
-}
-
-/// Displays the formatted prompt to the standard output
-/// then reads lines (CR or CRLF) from the standard input,
-/// until either a 'yes' or a 'no' answer is recorded.
-/// Returns [`bool`].
-///
-/// # Panics
-///
-/// Panics if writing to `std::io::stdout()` fails,
-/// or reading from `std::io::stdin()` fails.
-///
-/// # Example
-///
-/// ```
-/// // Output:
-/// // ... Do you like chocolate 🍫 (yes/no)? hello
-/// // ... Do you like chocolate 🍫 (yes/no)? yes
-/// // ... Yay! I like chocolate too 🙂.
-///
-/// if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
-///     println!("Yay! I like chocolate too 🙂.");
-/// }
-/// else {
-///     println!("Oh well, all the more for me 😋!");
-/// }
-/// ```
-#[macro_export]
-macro_rules! confirm {
-    () => ($crate::try_confirm!().unwrap());
-    ($($arg:tt)*) => ($crate::try_confirm!($($arg)*).unwrap());
+#[cfg(test)]
+#[allow(unused)]
+fn usage() {
+    input!();
+    input!("ABC");
+    input!("ABC {}", 123);
+    confirm!();
+    confirm!("ABC");
+    confirm!("ABC {}", 123);
 }
