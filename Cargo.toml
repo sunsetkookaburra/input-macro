@@ -1,0 +1,14 @@
+[package]
+name = "input-macro"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+description = "No-nonsense input!(...) macro for Rust."
+documentation = "https://docs.rs/input-macro"
+repository = "https://github.com/sunsetkookaburra/input-macro"
+readme = "README.md"
+
+[features]
+default = ["emoji", "alias"]
+emoji = []
+alias = []
