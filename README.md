@@ -7,11 +7,10 @@
 
 Simple no-nonsense `input!(...)` macro for Rust.
 
-## Links
-
-+ 📦 [Crate Page](https://crates.io/crates/input-macro)
-+ 📚 [Documentation](https://docs.rs/input-macro)
-+ 💻 [Repository](https://github.com/sunsetkookaburra/input-macro)
++ [📦 Crate Page](https://crates.io/crates/input-macro)
++ [📚 Documentation](https://docs.rs/input-macro)
++ [💻 Repository](https://github.com/sunsetkookaburra/input-macro)
++ [💻 License](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
 
 ## Example
 
@@ -40,3 +39,7 @@ fn main() {
     }
 }
 ```
+
+## License
+
+MPL v2.0, see [LICENSE](./LICENSE)
