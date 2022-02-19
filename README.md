@@ -1,9 +1,9 @@
 # input-macro
 
-![Repository](https://img.shields.io/static/v1?label=GitHub&message=Repository&color=blue&logo=github)
-![Crate Page](https://img.shields.io/crates/v/input-macro?logo=rust)
-![Documentation](https://img.shields.io/docsrs/input-macro?logo=rust)
-![License](https://img.shields.io/crates/l/input-macro)
+[![Repository](https://img.shields.io/static/v1?label=GitHub&message=Repository&color=blue&logo=github)](https://github.com/sunsetkookaburra/input-macro)
+[![Crate Page](https://img.shields.io/crates/v/input-macro?logo=rust)](https://crates.io/crates/input-macro)
+[![Documentation](https://img.shields.io/docsrs/input-macro?logo=rust)](https://docs.rs/input-macro)
+[![License](https://img.shields.io/crates/l/input-macro)](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
 
 Simple no-nonsense `input!(...)` macro for Rust.
 
