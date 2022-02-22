@@ -5,17 +5,12 @@
 [![Documentation](https://img.shields.io/docsrs/input-macro?logo=rust)](https://docs.rs/input-macro)
 [![License](https://img.shields.io/crates/l/input-macro)](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
 
-Simple no-nonsense `input!(...)` macro for Rust.
-
-+ [📦 Crate Page](https://crates.io/crates/input-macro)
-+ [📚 Documentation](https://docs.rs/input-macro)
-+ [💻 Repository](https://github.com/sunsetkookaburra/input-macro)
-+ [⚖️ License](https://github.com/sunsetkookaburra/input-macro/blob/main/LICENSE)
+No-nonsense `input!(...)` macro for Rust.
 
 ## Example
 
 ```rust
-use input_macro::{confirm, input};
+use input_macro::input;
 
 fn main() {
     let name = input!("What's your name? ");
@@ -32,10 +27,13 @@ fn main() {
         },
     }
 
-    if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
-        println!("Yay! I like chocolate too 🙂.");
-    } else {
-        println!("Oh well, all the more for me 😋.");
+    match input!("Do you like chocolate 🍫 (y/N)? ").as_str() {
+        "y" | "Y" => {
+            println!("Yay! I like chocolate too 🙂.");
+        },
+        _ => {
+            println!("Oh well, all the more for me 😋.");
+        },
     }
 }
 ```

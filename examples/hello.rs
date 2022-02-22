@@ -1,4 +1,4 @@
-use input_macro::{confirm, input};
+use input_macro::input;
 
 fn main() {
     let name = input!("What's your name? ");
@@ -15,9 +15,12 @@ fn main() {
         }
     }
 
-    if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
-        println!("Yay! I like chocolate too 🙂.");
-    } else {
-        println!("Oh well, all the more for me 😋.");
+    match input!("Do you like chocolate 🍫 (y/N)? ").as_str() {
+        "y" | "Y" => {
+            println!("Yay! I like chocolate too 🙂.");
+        }
+        _ => {
+            println!("Oh well, all the more for me 😋.");
+        }
     }
 }

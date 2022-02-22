@@ -11,7 +11,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use input_macro::{confirm, input};
+//! use input_macro::input;
 //!
 //! fn main() {
 //!     let name = input!("What's your name? ");
@@ -28,72 +28,33 @@
 //!         },
 //!     }
 //!
-//!     if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
-//!         println!("Yay! I like chocolate too 🙂.");
-//!     } else {
-//!         println!("Oh well, all the more for me 😋.");
+//!     match input!("Do you like chocolate 🍫 (y/N)? ").as_str() {
+//!         "y" | "Y" => {
+//!             println!("Yay! I like chocolate too 🙂.");
+//!         },
+//!         _ => {
+//!             println!("Oh well, all the more for me 😋.");
+//!         },
 //!     }
 //! }
 //! ```
 
 use std::fmt::Arguments;
-use std::io::{self, stdin, stdout, Write};
+use std::io::{self, BufRead, Write};
 
-/// Reads the next available line (without CR/CRLF) from the standard input.
-///
-/// # Example
-/// ```no_run
-/// # use input_macro::next_line;
-/// // echo "helloworld" | my_program
-/// assert_eq!(next_line().unwrap(), "helloworld");
-/// ```
-pub fn next_line() -> io::Result<String> {
-    let mut line = String::new();
-    stdin().read_line(&mut line).unwrap();
-    line.truncate(line.trim_end_matches(['\r', '\n']).len());
-    Ok(line)
-}
-
-/// Return whether `s` is a 'yes', 'no', or 'other' answer.
-///
-/// # Example
-/// ```
-/// # use input_macro::answer;
-/// assert_eq!(answer("yes"), Some(true));
-/// assert_eq!(answer("no"), Some(false));
-/// assert_eq!(answer("beans"), None);
-/// ```
-pub fn answer(s: &str) -> Option<bool> {
-    _answer(s.to_ascii_lowercase().as_str())
-}
-
-/// Attempts to display the formatted prompt to the standard output
-/// then read the next line (CR or CRLF) from the standard input.
-/// Returns [`io::Result<String>`] (see [`input!`] for more).
-///
-/// # Examples
-/// ```no_run
-/// # use input_macro::try_input;
-/// println!("Hello, {}!", try_input!("What's your name? ").unwrap());
-/// ```
-#[macro_export]
-macro_rules! try_input {
-    () => ($crate::next_line());
-    ($($arg:tt)*) => ($crate::_input(format_args!($($arg)*)));
-}
-
-/// Displays the formatted prompt to the standard output
-/// then reads the next line (CR or CRLF) from the standard input,
-/// and returns it as a [`String`].
+/// Displays formatted prompt text to the standard output and
+/// then reads the next line from the standard input,
+/// returning it as a [`String`].
 ///
 /// # Panics
 ///
 /// Panics if writing to `std::io::stdout()` fails,
 /// or reading from `std::io::stdin()` fails.
 ///
-/// # Examples
+/// # Example
 /// ```no_run
-/// # use input_macro::input;
+/// use input_macro::input;
+///
 /// let name: String = input!("What's your name? ");
 /// let age: i64 = input!("How old are you today {name}? ").parse().unwrap();
 /// println!(
@@ -103,108 +64,63 @@ macro_rules! try_input {
 /// ```
 #[macro_export]
 macro_rules! input {
-    () => ($crate::try_input!().unwrap());
-    ($($arg:tt)*) => ($crate::try_input!($($arg)*).unwrap());
+    () => ($crate::read_line_expect(&mut ::std::io::stdin().lock()).unwrap());
+    ($($arg:tt)*) => ($crate::input_fmt(&mut ::std::io::stdin().lock(), &mut ::std::io::stdout(), format_args!($($arg)*)).unwrap());
 }
 
-/// Attempts to display the formatted prompt to the standard output
-/// then reads lines (CR or CRLF) from the standard input,
-/// until either a 'yes' or a 'no' answer is recorded.
-/// Returns [`io::Result<bool>`] (see [`confirm!`] for more).
+/// Writes and flushes a formatted string as prompt text to the `dst` ([`Write`])
+/// then reads the next line from the `src` ([`io::BufRead`]),
+/// returning it as a [`io::Result<String>`].
+///
+/// # Errors
+///
+/// This function will return any I/O error reported while formatting, flushing or reading.
+/// Also returns an [`io::ErrorKind::UnexpectedEof`] error if the stream reaches EOF.
 ///
 /// # Example
-///
-/// ```no_run
-/// # use input_macro::try_confirm;
-/// let answer: bool = try_confirm!("Do you like chocolate 🍫 (yes/no)? ").unwrap();
 /// ```
-#[macro_export]
-macro_rules! try_confirm {
-    () => ($crate::_confirm(format_args!("(yes/no) ")));
-    ($($arg:tt)*) => ($crate::_confirm(format_args!($($arg)*)));
+/// use std::io::Cursor;
+/// use input_macro::input_fmt;
+///
+/// let mut source = Cursor::new("Joe Bloggs\n");
+/// let mut output = Vec::new();
+/// let name = input_fmt(&mut source, &mut output, format_args!("What's your {}? ", "name"));
+/// assert_eq!(String::from_utf8(output).unwrap(), "What's your name? ");
+/// assert_eq!(name.unwrap(), "Joe Bloggs");
+/// ```
+pub fn input_fmt<B: BufRead, W: Write>(
+    src: &mut B,
+    dst: &mut W,
+    fmt: Arguments,
+) -> io::Result<String> {
+    dst.write_fmt(fmt)?;
+    dst.flush()?;
+    read_line_expect(src)
 }
 
-/// Displays the formatted prompt to the standard output
-/// then reads lines (CR or CRLF) from the standard input,
-/// until either a 'yes' or a 'no' answer is recorded.
-/// Returns [`bool`].
+/// Reads the next line from `src` ([`io::BufRead`]), mapping
+/// EOF to [`io::ErrorKind::UnexpectedEof`] and returning a [`io::Result<String>`].
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics if writing to `std::io::stdout()` fails,
-/// or reading from `std::io::stdin()` fails.
+/// This function will return any I/O error reported while reading.
+/// Also returns an [`io::ErrorKind::UnexpectedEof`] error if `src` reaches EOF (returns `Ok(0)`).
 ///
 /// # Example
-///
-/// ```no_run
-/// # use input_macro::confirm;
-/// // ... Do you like chocolate 🍫 (yes/no)? hello
-/// // ... Do you like chocolate 🍫 (yes/no)? yes
-/// // ... Yay! I like chocolate too 🙂.
-///
-/// if confirm!("Do you like chocolate 🍫 (yes/no)? ") {
-///     println!("Yay! I like chocolate too 🙂.");
-/// }
-/// else {
-///     println!("Oh well, all the more for me 😋!");
-/// }
 /// ```
-#[macro_export]
-macro_rules! confirm {
-    () => ($crate::try_confirm!().unwrap());
-    ($($arg:tt)*) => ($crate::try_confirm!($($arg)*).unwrap());
-}
-
-#[doc(hidden)]
-pub fn _input(fmt: Arguments) -> io::Result<String> {
-    stdout().write_fmt(fmt)?;
-    stdout().flush()?;
-    next_line()
-}
-
-fn _answer(s: &str) -> Option<bool> {
-    match s {
-        "y" | "yes" => Some(true),
-        "n" | "no" => Some(false),
-        #[cfg(feature = "emoji")]
-        "👍" | "👌" | "🆗" => Some(true),
-        #[cfg(feature = "emoji")]
-        "👎" | "🆖" => Some(false),
-        #[cfg(feature = "alias")]
-        "yea" | "aye" | "yeah" | "good" | "yay" | "ye" | "true" | "do" | "go" | "sure" | "yep"
-        | "always" | "positive" => Some(true),
-        #[cfg(feature = "alias")]
-        "nah" | "na" | "nay" | "nope" | "false" | "don't" | "dont" | "stop" | "nup" | "bad"
-        | "never" | "not" | "nop" | "negative" => Some(false),
-        _ => None,
-    }
-}
-
-fn _confirm_once(fmt: Arguments) -> io::Result<Option<bool>> {
-    Ok({
-        let mut line = _input(fmt)?;
-        line.make_ascii_lowercase();
-        _answer(&line)
-    })
-}
-
-#[doc(hidden)]
-pub fn _confirm(fmt: Arguments) -> io::Result<bool> {
-    Ok(loop {
-        match _confirm_once(fmt)? {
-            Some(v) => break v,
-            None => {}
-        }
-    })
-}
-
-#[cfg(test)]
-#[allow(unused)]
-fn usage() {
-    input!();
-    input!("ABC");
-    input!("ABC {}", 123);
-    confirm!();
-    confirm!("ABC");
-    confirm!("ABC {}", 123);
+/// use std::io::Cursor;
+/// use input_macro::read_line_expected;
+///
+/// let mut source = Cursor::new("Insert Text Here\n");
+/// let text = read_line_expected(&mut source);
+/// assert_eq!(text.unwrap(), "Insert Text Here");
+/// ```
+pub fn read_line_expect<B: BufRead>(src: &mut B) -> io::Result<String> {
+    src.lines().next().map_or(
+        Err(io::Error::new(
+            io::ErrorKind::UnexpectedEof,
+            "Input BufRead reached EOF before".to_string(),
+        )),
+        |line| line,
+    )
 }
